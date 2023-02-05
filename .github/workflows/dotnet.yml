@@ -32,7 +32,7 @@ jobs:
     - name: Test
       run: dotnet test --no-build --verbosity normal ./Application/tests/RazorPagesTestSample.Tests/RazorPagesTestSample.Tests.csproj
       
-  dockerBuildPush:
+  docker-build-and-push:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
@@ -48,3 +48,57 @@ jobs:
     
     - name: Docker Push
       run: docker push $registryName/$repositoryName:$tag
+      
+  deploy-to-dev:
+    runs-on: ubuntu-latest
+    needs: docker-build-and-push
+    environment:
+      name: dev
+      url: https://48ec2devops-dev.azurewebsites.net/
+    steps:
+    - uses: azure/login@v1
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
+    - uses: azure/webapps-deploy@v2
+      with:
+        app-name: '48ec2devops-dev'
+        images: '${{env.registryName}}/${{env.repositoryName}}:${{env.tag}}'
+    - name: Azure logout
+      run: |
+        az logout
+
+  deploy-to-test:
+      runs-on: ubuntu-latest
+      needs: [docker-build-and-push, deploy-to-dev]
+      environment:
+        name: test
+        url: https://48ec2devops-test.azurewebsites.net/
+      steps:
+      - uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+      - uses: azure/webapps-deploy@v2
+        with:
+          app-name: '48ec2devops-test'
+          images: '${{env.registryName}}/${{env.repositoryName}}:${{env.tag}}'
+      - name: Azure logout
+        run: |
+          az logout
+             
+  deploy-to-prod:
+      runs-on: ubuntu-latest
+      needs: [docker-build-and-push, deploy-to-test]
+      environment:
+        name: prod
+        url: https://48ec2devops-prod.azurewebsites.net/
+      steps:
+      - uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+      - uses: azure/webapps-deploy@v2
+        with:
+          app-name: '48ec2devops-prod'
+          images: '${{env.registryName}}/${{env.repositoryName}}:${{env.tag}}'
+      - name: Azure logout
+        run: |
+          az logout
