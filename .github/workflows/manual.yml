@@ -1,6 +1,9 @@
 name: Manual workflow
 on:
   workflow_dispatch:
+  
+env:
+  targetEnv: prod
 
 jobs:
   build-and-deploy:
@@ -18,3 +21,4 @@ jobs:
         subscriptionId: 4473dee2-2e85-4849-b421-5cc5baf520b5
         resourceGroupName: RG-HudsonHacker2
         template: ./ARM-Templates/container-webapp-template.json
+        parameters: webAppName=48ec2devops-${{ env.targetEnv }}
