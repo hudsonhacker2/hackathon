@@ -1,0 +1,20 @@
+name: Manual workflow
+on:
+  workflow_dispatch:
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@master
+    - name: Azure Login
+      uses: Azure/login@v1.4.6
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
+    - name: Deploy Azure Resource Manager (ARM) Template
+      uses: Azure/arm-deploy@v1.0.9
+      with:
+        scope: resourcegroup
+        subscriptionId: 4473dee2-2e85-4849-b421-5cc5baf520b5
+        resourceGroupName: RG-HudsonHacker2
+        template: ./ARM-Templates/container-webapp-template.json
